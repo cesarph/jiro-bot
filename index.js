@@ -1,8 +1,10 @@
 const Discord = require('discord.js'),
       fs = require('fs'),
       { prefix } = require('./config.json'),
-      client = new Discord.Client(),
-      token =  process.env.AUTH_TOKEN;
+      client = new Discord.Client();
+
+require('dotenv').config()
+const token =  process.env.AUTH_TOKEN;
 
 client.commands = new Discord.Collection();
 
