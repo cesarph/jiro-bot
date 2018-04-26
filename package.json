@@ -17,7 +17,8 @@
   "author": "César Palazuelos",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "^11.3.2"
+    "discord.js": "^11.3.2",
+    "mongodb": "^3.0.7"
   },
   "devDependencies": {
     "dotenv": "^5.0.1"
