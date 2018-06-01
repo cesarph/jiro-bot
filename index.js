@@ -4,7 +4,7 @@ const Discord = require('discord.js'),
       client = new Discord.Client();
 
 require('dotenv').config()
-const token =  process.env.AUTH_TOKEN;
+const token =  process.env.AUTH_TOKEN_PROD;
 
 client.commands = new Discord.Collection();
 

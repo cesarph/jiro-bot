@@ -30,7 +30,7 @@ module.exports = {
             [ ap, aap, dp, gearURL ] = args;
 
         } else {
-				
+			message.channel.send(`It seems you used the command wrongly! Usage:`);
 			return message.channel.send(usageInfo());
 
         }
@@ -65,7 +65,7 @@ module.exports = {
 
 					} catch (err) {
 						if (ownGearError) {
-							message.channel.send(`You don't ! Please set it up`);
+							message.channel.send(`Please set up your gear!`);
 							return message.channel.send(usageInfo());
 						} else {
 							return message.channel.send(`Sorry! I couldn't find anyone with that name`);
