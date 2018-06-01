@@ -1,4 +1,10 @@
-const Discord = require('discord.js');
+const Discord = require('discord.js'),
+	  MongoClient = require('mongodb').MongoClient,
+	  assert = require('assert')
+	
+require('dotenv').config();
+
+const urlDB = `mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`;
 
 module.exports = {
 	name: 'gear',
@@ -8,31 +14,51 @@ module.exports = {
 			return message.channel.send(`usage info`);
 		}
 
-		args2 = [172, 180, 250, 'sorceress', 'Darkceuss', 'Seivy', 61.017, 'April 23 2018', 'https://cdn.discordapp.com/attachments/406891228303720459/438133319327154177/unknown.png' ];
-		const [ ap, aap, dp, toonClass, familyName, characterName, lvl, lastUpdated, imageURL ] = args2;
+		let [ name ] = args;
 
-		const [ offhand ] = args;
+		name = name.toLowerCase();
+		
 
-		const embed = new Discord.RichEmbed()
-			.setColor('DARK_RED')
-			.setAuthor(`${message.author.username}'s gear`, message.author.avatarURL)
-			.setThumbnail('https://i.imgur.com/wSTFkRM.png')
-			.addField('Family', capitalizeFirstLetter(familyName), true)
-			.addField('Character', capitalizeFirstLetter(characterName), true)
-			.addField('Class', capitalizeFirstLetter(toonClass), true)
-			.addField('Lvl', lvl, true)
-			.addField('\u200B', `**${offhand} build**`.toUpperCase())
-			.addField('\:dagger: **AP**', ap, true)
-			.addField('\:crossed_swords: **Awakening AP**', aap, true)
-			.addField('\:shield: **DP**', dp, true)
-			.setImage(imageURL)
-			.setFooter(`Last update ${lastUpdated}`, 'https://i.imgur.com/wSTFkRM.png');
+		(async function () {
+            let client;
 
-		message.channel.send({ embed });
+            try {
+                client = await MongoClient.connect(urlDB);
+                console.log("Connected correctly to server");
+
+				const db = client.db(process.env.DB_DATABASE);
+				
+				const query = { $or: [ { "family": name }, { "char": name }, { "tag": name } ]};
+				console.log(name);
+				r = await db.collection('gear').findOne(query);
+
+				const embed = new Discord.RichEmbed()
+					.setColor('DARK_RED')
+					.setAuthor(`Gear`, 'https://res.cloudinary.com/teepublic/image/private/s--hzenCVH3--/t_Preview/b_rgb:191919,c_limit,f_jpg,h_630,q_90,w_630/v1467371704/production/designs/567364_1.jpg')
+					.addField('Family', (r.family) ? capitalizeFirstLetter(r.family) : '?', true)
+					.addField('Character', (r.char) ? capitalizeFirstLetter(r.char) : '?', true)
+					.addField('Class', (r.class) ? capitalizeFirstLetter(r.class) : '?', true)
+					.addField('Lvl', (r.lvl) ? r.lvl : '?', true)
+					.addBlankField()
+					.addField('**AP**', r.gear.ap, true)
+					.addField('**Awakening AP**', r.gear.aap, true)
+					.addField('**DP**', r.gear.dp, true)
+					.addField('Renown Score', r.gear.score, true)
+					.setImage(r.gear.gearURL)
+					.setFooter(`Last update `, 'https://i.imgur.com/wSTFkRM.png');
+
+				message.channel.send({ embed });
+
+            } catch (err) {
+                console.log(err.stack);
+            }
+
+            client.close();
+        })();
 
 	},
 };
 
 function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
+	return string.charAt(0).toUpperCase() + string.slice(1);
 }
