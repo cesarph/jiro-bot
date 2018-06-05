@@ -8,7 +8,8 @@ const urlDB = `mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${pro
 
 module.exports = {
 	name: 'gear',
-	description: 'Shows/adds/updates the gearscore of a player',
+	description: 'Shows/adds/updates the gear of a player',
+	usage: usageInfo(),
 	execute(message, args) {
 		let name, gearscore, ap, aap, dp, offhand, gearURL, showGear = false, ownGearError = false;
 
@@ -132,9 +133,9 @@ function usageInfo() {
 	.setColor('DARK_RED')
 	.setAuthor(`!gear Command Usage`, 'https://res.cloudinary.com/teepublic/image/private/s--hzenCVH3--/t_Preview/b_rgb:191919,c_limit,f_jpg,h_630,q_90,w_630/v1467371704/production/designs/567364_1.jpg')
 	.addBlankField()
-	.addField('Showing Gear: !gear @Name or !gear', 'e.g. !gear @Darkceuss')
+	.addField('Showing Gear: !gear <@Name> or !gear', 'e.g. !gear @Darkceuss')
 	.addBlankField()
-	.addField('Updating/Adding Gear: !gear AP/AAP/DP imageURL or !gear AP AAP DP imageURL', 'e.g. !gear 178/180/230 https://i.gyazo.com/c081e197f6052b9d3abe466be87ef152.png')
+	.addField('Updating/Adding Gear: !gear <AP/AAP/DP> <imageURL> or !gear <AP> <AAP> <DP> <imageURL>', 'e.g. !gear 178/180/230 https://i.gyazo.com/c081e197f6052b9d3abe466be87ef152.png')
 	.addBlankField();
 
 	return { embed };
