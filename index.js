@@ -3,8 +3,8 @@ const Discord = require('discord.js'),
       { prefix } = require('./config.json'),
       client = new Discord.Client();
 
-require('dotenv').config()
-const token =  process.env.AUTH_TOKEN_PROD;
+require('dotenv').config();
+const token = (process.env.NODE_ENV == 'prod') ? process.env.AUTH_TOKEN_PROD : process.env.AUTH_TOKEN_DEV ;
 
 client.commands = new Discord.Collection();
 
