@@ -43,10 +43,11 @@ module.exports = {
                 console.log("Connected correctly to server");
 
 				const db = client.db(process.env.DB_DATABASE);
+				let r;
 
 				if (showGear) {
-					const query = { "tag": name };
-
+					const query = { $or: [ { "tag": name }, { "alt-tag": name } ] };
+					
 					try {
 						r = await db.collection('gear').findOne(query);
 
@@ -68,6 +69,7 @@ module.exports = {
 							message.channel.send(`Please set up your gear!`);
 							return message.channel.send(usageInfo());
 						} else {
+							console.log(err, r);
 							return message.channel.send(`Sorry! I couldn't find anyone with that name`);
 						}
 					}
@@ -81,6 +83,7 @@ module.exports = {
 							"name":message.author.username,
 							"id": message.author.id.toLowerCase(),
 							"tag": `<@${message.author.id.toLowerCase()}>`,
+							"alt-tag": `<@!${message.author.id.toLowerCase()}>`,
                             "gear": {
                                 "ap": ap,
                                 "aap": aap,
@@ -103,6 +106,7 @@ module.exports = {
 				
 
             } catch (err) {
+				console.log(err);
 				return message.channel.send(`There was an error connecting to the database!`);
             }
 
