@@ -21,10 +21,12 @@ module.exports = {
             [ name ] = args;
 			name = name.toLowerCase();
 			showGear = true;
+			if (name.indexOf('@') < 1) 
+				return message.channel.send("It seems that you didn't mention anyone! Try !gear @Darkceuss");
 
         } else if (args.length === 2) {
-            [ gearscore, gearURL ] = args;
-            [ ap, aap, dp ] = parseGearscore(gearscore);
+			[ gearscore, gearURL ] = args;
+			[ ap, aap, dp ] = gearscore.split(/\/+/);
 
         } else if (args.length === 4) {
             [ ap, aap, dp, gearURL ] = args;
@@ -32,8 +34,16 @@ module.exports = {
         } else {
 			message.channel.send(`It seems you used the command wrongly! Usage:`);
 			return message.channel.send(usageInfo());
-
-        }
+		}
+		
+		if (gearURL) {
+			if (!gearURL.match(/(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)/g)) 
+				return message.channel.send("The URL of your img is wrong! It needs to end in one of the following formats: png, jpg or gif");
+		}
+		if (gearscore) {
+			if (!gearscore.match(/^[0-9]{1,3}\/[0-9]{1,3}\/[0-9]{1,3}\b/g))
+				return message.channel.send("The format of your gears core is wrong! It needs to be as follows: AP/AAP/DP");
+		}
 
 		(async function () {	
             let client;
@@ -69,7 +79,6 @@ module.exports = {
 							message.channel.send(`Please set up your gear!`);
 							return message.channel.send(usageInfo());
 						} else {
-							console.log(err, r);
 							return message.channel.send(`Sorry! I couldn't find anyone with that name`);
 						}
 					}
@@ -77,10 +86,9 @@ module.exports = {
 
 				} else {
 					const query = { "id": message.author.id };
-
                     const updatedDoc = {
                         $set: {
-							"name":message.author.username,
+							"name":message.author.lastMessage.member.nickname,
 							"id": message.author.id.toLowerCase(),
 							"tag": `<@${message.author.id.toLowerCase()}>`,
 							"alt-tag": `<@!${message.author.id.toLowerCase()}>`,
@@ -96,17 +104,16 @@ module.exports = {
                     };
 					try {
 						r = await db.collection('gear').updateOne(query, updatedDoc, { upsert: true });
-						return message.channel.send(`Your gear has been updated succesfully!`);
+
+						if (!r.upsertedCount) return message.channel.send(`Your gear has been updated succesfully!`);
+						return message.channel.send(`Your gear has been added succesfully!`);
 
 					} catch (err) {
 						return message.channel.send(`Oops! Something went wrong, try again!`);
 					}
                      
 				}
-				
-
             } catch (err) {
-				console.log(err);
 				return message.channel.send(`There was an error connecting to the database!`);
             }
 
@@ -118,10 +125,6 @@ module.exports = {
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-function parseGearscore(gs) {
-    return gs.split(/\/+/)
 }
 
 function usageInfo() {
