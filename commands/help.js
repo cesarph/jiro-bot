@@ -1,6 +1,4 @@
 const Discord = require('discord.js'),
-	  MongoClient = require('mongodb').MongoClient,
-      assert = require('assert'),
       { prefix } = require('../config.json');
 
 module.exports = {

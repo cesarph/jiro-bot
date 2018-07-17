@@ -1,6 +1,6 @@
 const Discord = require('discord.js'),
 	  MongoClient = require('mongodb').MongoClient,
-	  assert = require('assert')
+	  { gearEmbed, extractID } = require('../helper');
 	
 require('dotenv').config();
 
@@ -20,39 +20,42 @@ module.exports = {
 		examples: ['!gear <AP/AAP/DP> <imageURL>', '!gear <AP> <AAP> <DP> <imageURL>', 'e.g. !gear 178/180/230 https://i.gyazo.com/c081e197f6052b9d3abe466be87ef152.png']
 	}],
 	execute(message, args) {
-		let name, gearscore, ap, aap, dp, offhand, gearURL, showGear = false, ownGearError = false;
+		let id = message.author.id, gearscore, ap, aap, dp, gearURL, showGear = false, ownGearError = false;
 
-        if (!args.length) {
-            name = `<@${message.author.id.toLowerCase()}>`;
-			showGear = true;
-			ownGearError = true;
+		switch (args.length) {
+			case 0:
+				showGear = true;
+				ownGearError = true;
+				break;
 
-        } else if (args.length === 1) {
-            [ name ] = args;
-			name = name.toLowerCase();
-			showGear = true;
-			if (name.indexOf('@') < 1) 
-				return message.channel.send("It seems that you didn't mention anyone! Try !gear @Darkceuss");
+			case 1:
+				[ id ] = args;
+				showGear = true;
+				
+				if (id.indexOf('@') < 1) 
+					throw new Error("It seems that you didn't mention anyone! Try `!gear @darkceuss`. For more information use `!help gear`");
+				break;
 
-        } else if (args.length === 2) {
-			[ gearscore, gearURL ] = args;
-			[ ap, aap, dp ] = gearscore.split(/\/+/);
+			case 2:
+				[ gearscore, gearURL ] = args;
+				[ ap, aap, dp ] = gearscore.split(/\/+/);
+				break;
 
-        } else if (args.length === 4) {
-            [ ap, aap, dp, gearURL ] = args;
+			case 4:
+				[ ap, aap, dp, gearURL ] = args;
+				break;
 
-        } else {
-			message.channel.send(`It seems you used the command wrongly! Use **!help gear** for more information`);
-			return message.channel.send(usageInfo());
+			default:
+				throw new Error('It seems you used the command wrongly! For more information use `!help gear`');
 		}
-		
+    
 		if (gearURL) {
 			if (!gearURL.match(/(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)/g)) 
-				return message.channel.send("The URL of your img is wrong! It needs to end in one of the following formats: png, jpg or gif");
+				throw new Error("The URL of your img is wrong! It needs to end in one of the following formats: png, jpg or gif. For more information use `!help gear`");
 		}
 		if (gearscore) {
 			if (!gearscore.match(/^[0-9]{1,3}\/[0-9]{1,3}\/[0-9]{1,3}\b/g))
-				return message.channel.send("The format of your gears core is wrong! It needs to be as follows: AP/AAP/DP");
+				throw new Error("The format of your gears core is wrong! It needs to be as follows: AP/AAP/DP. For more information use `!help gear`");
 		}
 
 		(async function () {	
@@ -66,42 +69,30 @@ module.exports = {
 				let r;
 
 				if (showGear) {
-					const query = { $or: [ { "tag": name }, { "alt-tag": name } ] };
+					const query = { "id" : extractID(id) };
 					
 					try {
 						r = await db.collection('gear').findOne(query);
-
-						const embed = new Discord.RichEmbed()
-							.setColor('DARK_RED')
-							.setAuthor(`${r.name}'s Gear`, 'https://res.cloudinary.com/teepublic/image/private/s--hzenCVH3--/t_Preview/b_rgb:191919,c_limit,f_jpg,h_630,q_90,w_630/v1467371704/production/designs/567364_1.jpg')
-							.setThumbnail('https://res.cloudinary.com/teepublic/image/private/s--hzenCVH3--/t_Preview/b_rgb:191919,c_limit,f_jpg,h_630,q_90,w_630/v1467371704/production/designs/567364_1.jpg')
-							.addField('**AP**', r.gear.ap, true)
-							.addField('**Awakening AP**', r.gear.aap, true)
-							.addField('**DP**', r.gear.dp, true)
-							.addField('Renown Score', r.gear.score, true)
-							.setImage(r.gear.gearURL)
-							.setFooter(`Last update ${new Date(r.timestamp).toUTCString()}`, '');
+						
+						const embed = gearEmbed(r);
 
 						message.channel.send({ embed });
 
 					} catch (err) {
-						if (ownGearError) {
-							message.channel.send(`Please set up your gear!`);
-							return message.channel.send(usageInfo());
-						} else {
-							return message.channel.send(`Sorry! I couldn't find anyone with that name`);
-						}
+						const msg = (ownGearError) ?
+							'Please set up your gear! For more information use `!help gear`':
+							`Sorry! It seems that he/she hasn't set up his/her gear`;
+						
+						throw new Error(msg);
 					}
 					
 
 				} else {
-					const query = { "id": message.author.id };
+					const query = { "id": id };
                     const updatedDoc = {
                         $set: {
-							"name":message.author.lastMessage.member.nickname,
-							"id": message.author.id.toLowerCase(),
-							"tag": `<@${message.author.id.toLowerCase()}>`,
-							"alt-tag": `<@!${message.author.id.toLowerCase()}>`,
+							"name": message.author.lastMessage.member.nickname,
+							"id": id,
                             "gear": {
                                 "ap": ap,
                                 "aap": aap,
@@ -111,7 +102,8 @@ module.exports = {
 							},
 							"timestamp": Date.now()
                         }
-                    };
+					};
+					
 					try {
 						r = await db.collection('gear').updateOne(query, updatedDoc, { upsert: true });
 
@@ -119,20 +111,18 @@ module.exports = {
 						return message.channel.send(`Your gear has been added succesfully!`);
 
 					} catch (err) {
-						return message.channel.send(`Oops! Something went wrong, try again!`);
+						throw new Error(`Oops! Something went wrong, try again!`);
 					}
                      
 				}
             } catch (err) {
-				return message.channel.send(`There was an error connecting to the database!`);
-            }
+				throw new Error(err.message);
 
-            client.close();
+            } finally {
+				client.close();
+			}
         })();
 
 	},
 };
 
-function capitalizeFirstLetter(string) {
-	return string.charAt(0).toUpperCase() + string.slice(1);
-}
